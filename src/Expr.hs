@@ -21,7 +21,7 @@ data Expr = I        Int
           | LetRec   [(String, Expr)] Expr
           | Unpack   [String] Expr Expr
           | Proc     [String] Expr
-          | Apply    Expr [Expr]
+          | Apply    String [Expr]
           | LetProc  String [String] Expr Expr
 
 instance Show Expr where
@@ -40,7 +40,8 @@ instance Show Expr where
   show (Unpack names expr body) =
     "unpack " ++ unwords names ++ " = " ++ show expr ++ " in " ++ show body
   show (Proc vars body) = "proc (" ++ intercalate "," vars ++ ") " ++ show body
-  show (Apply func args) = "(" ++ show func ++ " " ++ unwords (show <$> args) ++ ")"
+  show (Apply func args) =
+    func ++ "(" ++ intercalate "," (show <$> args) ++ ")"
   show (LetProc name vars funbody inbody) =
     "letproc " ++ name ++ " (" ++ intercalate "," vars ++ ") = " ++ show funbody ++ " in " ++ show inbody
 

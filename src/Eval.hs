@@ -63,10 +63,10 @@ eval (Proc vars body) = gets (VProc vars body)
 eval (LetProc name vars funbody inbody) =
   eval (Let [(name, Proc vars funbody)] inbody)
 
-eval (Apply procedure args) = do
-  proc' <- eval procedure
+eval (Apply procName args) = do
+  proc' <- gets (M.lookup procName)
   case proc' of
-    (VProc vars body procScope) ->
+    Just (VProc vars body procScope) ->
       if length vars == length args
       then do
         argVals <- traverse eval args
@@ -78,8 +78,8 @@ eval (Apply procedure args) = do
         pure bodyVal
       else throwError
            $ "Error: expected " ++ show (length vars) ++ " arguments, got "
-           ++ show (length args)
-    x -> throwError $ "TypeError: not a procedure: " ++ show x
+           ++ show (length args) ++ ": " ++ procName
+    Nothing -> throwError $ "TypeError: not a procedure: " ++ procName
 
 -- eval utils
 evalArgs :: (MonadState Env m) => [String] -> [Val] -> m ()

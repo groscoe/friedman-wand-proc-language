@@ -16,11 +16,11 @@ parseExpr = many space *> (
   parseInt
   <|> try parseLetRec
   <|> try parseLet
+  <|> try parseApply
   <|> try parseVar
   <|> try parseCons
   <|> try parseLetProc
   <|> parseProc
-  <|> parseApply
   <|> parseUnpack
   <|> parseList
   <|> parseListUnOp
@@ -68,8 +68,8 @@ parseProc = Proc
 
 parseApply :: Parser Expr
 parseApply = Apply
-  <$> (symbol '(' *> parseExpr)
-  <*> (many parseExpr <* symbol ')')
+  <$> parseIdentifier reserved
+  <*> betweenParens (sepBy parseExpr (symbol ','))
 
 parseList :: Parser Expr
 parseList = try parseEmptyList <|> parseNonEmptyList
