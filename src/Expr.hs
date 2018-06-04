@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Expr (Expr (..), Val (..), Env, val2Int, val2Bool, val2List) where
 
+import Data.List (intercalate)
 import Control.Monad.Except (MonadError, throwError)
 import qualified Data.Map as M
 
@@ -19,9 +20,9 @@ data Expr = I        Int
           | Let      [(String, Expr)] Expr
           | LetRec   [(String, Expr)] Expr
           | Unpack   [String] Expr Expr
-          | Proc     String Expr
-          | Apply    Expr Expr
-          | LetProc  String String Expr Expr
+          | Proc     [String] Expr
+          | Apply    Expr [Expr]
+          | LetProc  String [String] Expr Expr
 
 instance Show Expr where
   show (I i) = show i
@@ -38,10 +39,10 @@ instance Show Expr where
     "let* " ++ showAttribs vs ++ " in " ++ show body
   show (Unpack names expr body) =
     "unpack " ++ unwords names ++ " = " ++ show expr ++ " in " ++ show body
-  show (Proc var body) = "proc (" ++ var ++ ") " ++ show body
-  show (Apply e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
-  show (LetProc name var funbody inbody) =
-    "letproc " ++ name ++ " (" ++ var ++ ") = " ++ show funbody ++ " in " ++ show inbody
+  show (Proc vars body) = "proc (" ++ intercalate "," vars ++ ") " ++ show body
+  show (Apply func args) = "(" ++ show func ++ " " ++ unwords (show <$> args) ++ ")"
+  show (LetProc name vars funbody inbody) =
+    "letproc " ++ name ++ " (" ++ intercalate "," vars ++ ") = " ++ show funbody ++ " in " ++ show inbody
 
 showAttribs :: [(String, Expr)] -> String
 showAttribs = unwords . fmap (\(name, expr) -> name ++ " = " ++ show expr)
@@ -62,13 +63,13 @@ showUnOp sym e = sym ++ "(" ++ show e ++ ")"
 data Val = VInt  Int
          | VBool Bool
          | VList [Val]
-         | VProc String Expr Env
+         | VProc [String] Expr Env
 
 instance Show Val where
   show (VInt i) = show i
   show (VBool b) = show b
   show (VList xs) = show xs
-  show (VProc var body _) = "proc (" ++ var ++ ") " ++ show body
+  show (VProc vars body _) = "proc (" ++ intercalate "," vars ++ ") " ++ show body
 
 val2Int :: (MonadError String m) => Val -> m Int
 val2Int (VInt n) = pure n

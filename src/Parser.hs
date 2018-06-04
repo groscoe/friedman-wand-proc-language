@@ -50,8 +50,8 @@ parseCons = parseBinOp "cons" Cons
 
 parseLetProc :: Parser Expr
 parseLetProc = LetProc
-  <$> (tok "letproc" *> (parseIdentifier reserved) <* many space)
-  <*> betweenParens (parseIdentifier reserved <* many space)
+  <$> (tok "letproc" *> parseIdentifier reserved <* many space)
+  <*> betweenParens (sepBy (parseIdentifier reserved) (symbol ','))
   <*> (symbol '=' *> parseExpr)
   <*> (tok "in" *> parseExpr)
 
@@ -63,13 +63,13 @@ parseUnpack = Unpack
 
 parseProc :: Parser Expr
 parseProc = Proc
-  <$> (func "proc" *> betweenParens (parseIdentifier reserved))
+  <$> (func "proc" *> betweenParens (sepBy (parseIdentifier reserved) (symbol ',')))
   <*> parseExpr
 
 parseApply :: Parser Expr
 parseApply = Apply
   <$> (symbol '(' *> parseExpr)
-  <*> (parseExpr <* symbol ')')
+  <*> (many parseExpr <* symbol ')')
 
 parseList :: Parser Expr
 parseList = try parseEmptyList <|> parseNonEmptyList

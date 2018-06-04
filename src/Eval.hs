@@ -58,24 +58,34 @@ eval (Unpack _ Nil _) =
 eval (Unpack _ badExpr _) =
   throwError $ "TypeError: not a list: " ++ show badExpr
 
-eval (Proc var body) = gets (VProc var body)
+eval (Proc vars body) = gets (VProc vars body)
 
-eval (LetProc name var funbody inbody) =
-  eval (Let [(name, Proc var funbody)] inbody)
+eval (LetProc name vars funbody inbody) =
+  eval (Let [(name, Proc vars funbody)] inbody)
 
-eval (Apply e1 e2) = do
-  e1' <- eval e1
-  case e1' of
-    (VProc var body env) -> do
-      e2' <- eval e2
-      oldState <- get
-      put (extendEnv var e2' env)
-      bodyVal <- eval body
-      put oldState
-      pure bodyVal
+eval (Apply procedure args) = do
+  proc' <- eval procedure
+  case proc' of
+    (VProc vars body procScope) ->
+      if length vars == length args
+      then do
+        argVals <- traverse eval args
+        oldState <- get
+        put procScope
+        evalArgs vars argVals
+        bodyVal <- eval body
+        put oldState
+        pure bodyVal
+      else throwError
+           $ "Error: expected " ++ show (length vars) ++ " arguments, got "
+           ++ show (length args)
     x -> throwError $ "TypeError: not a procedure: " ++ show x
 
 -- eval utils
+evalArgs :: (MonadState Env m) => [String] -> [Val] -> m ()
+evalArgs names vals =
+  sequence_ $ (\(name, val) -> modify (extendEnv name val)) <$> (names `zip` vals)
+
 evalAttribsWith :: (MonadError String m, MonadState Env m)
                 => ([(String, Expr)] -> m ()) -> [(String, Expr)] -> Expr -> m Val
 evalAttribsWith evalFun attribs body = do
