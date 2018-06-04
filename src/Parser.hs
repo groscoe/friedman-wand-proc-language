@@ -18,6 +18,7 @@ parseExpr = many space *> (
   <|> try parseLet
   <|> try parseVar
   <|> try parseCons
+  <|> try parseLetProc
   <|> parseProc
   <|> parseApply
   <|> parseUnpack
@@ -47,6 +48,13 @@ parseVar = Var <$> parseIdentifier reserved
 parseCons :: Parser Expr
 parseCons = parseBinOp "cons" Cons
 
+parseLetProc :: Parser Expr
+parseLetProc = LetProc
+  <$> (tok "letproc" *> (parseIdentifier reserved) <* many space)
+  <*> betweenParens (parseIdentifier reserved <* many space)
+  <*> (symbol '=' *> parseExpr)
+  <*> (tok "in" *> parseExpr)
+
 parseUnpack :: Parser Expr
 parseUnpack = Unpack
   <$> (tok "unpack" *> many1 (parseIdentifier reserved <* many space))
@@ -55,7 +63,7 @@ parseUnpack = Unpack
 
 parseProc :: Parser Expr
 parseProc = Proc
-  <$> (tok "proc" *> betweenParens (parseIdentifier reserved))
+  <$> (func "proc" *> betweenParens (parseIdentifier reserved))
   <*> parseExpr
 
 parseApply :: Parser Expr
@@ -175,6 +183,7 @@ reserved = S.fromList [
   "in",
   "less",
   "let",
+  "letproc",
   "list",
   "minus",
   "null",

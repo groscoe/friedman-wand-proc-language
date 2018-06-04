@@ -60,6 +60,9 @@ eval (Unpack _ badExpr _) =
 
 eval (Proc var body) = gets (VProc var body)
 
+eval (LetProc name var funbody inbody) =
+  eval (Let [(name, Proc var funbody)] inbody)
+
 eval (Apply e1 e2) = do
   e1' <- eval e1
   case e1' of

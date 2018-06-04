@@ -21,6 +21,7 @@ data Expr = I        Int
           | Unpack   [String] Expr Expr
           | Proc     String Expr
           | Apply    Expr Expr
+          | LetProc  String String Expr Expr
 
 instance Show Expr where
   show (I i) = show i
@@ -39,6 +40,8 @@ instance Show Expr where
     "unpack " ++ unwords names ++ " = " ++ show expr ++ " in " ++ show body
   show (Proc var body) = "proc (" ++ var ++ ") " ++ show body
   show (Apply e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+  show (LetProc name var funbody inbody) =
+    "letproc " ++ name ++ " (" ++ var ++ ") = " ++ show funbody ++ " in " ++ show inbody
 
 showAttribs :: [(String, Expr)] -> String
 showAttribs = unwords . fmap (\(name, expr) -> name ++ " = " ++ show expr)
@@ -65,6 +68,7 @@ instance Show Val where
   show (VInt i) = show i
   show (VBool b) = show b
   show (VList xs) = show xs
+  show (VProc var body _) = "proc (" ++ var ++ ") " ++ show body
 
 val2Int :: (MonadError String m) => Val -> m Int
 val2Int (VInt n) = pure n
