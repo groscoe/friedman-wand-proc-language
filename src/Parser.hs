@@ -9,7 +9,7 @@ import qualified Data.Set as S
 
 -- Parsing
 parseProgram :: String -> Either ParseError Expr
-parseProgram = parse (parseExpr <* eof) "LET"
+parseProgram = parse (parseExpr <* eof) "PROC"
 
 parseExpr :: Parser Expr
 parseExpr = many space *> (
