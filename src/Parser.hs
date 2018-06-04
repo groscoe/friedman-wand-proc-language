@@ -1,7 +1,6 @@
 module Parser (parseProgram) where
 
 import Expr
-import Val
 
 import Control.Monad (guard)
 import Text.Parsec hiding (State)
@@ -19,6 +18,8 @@ parseExpr = many space *> (
   <|> try parseLet
   <|> try parseVar
   <|> try parseCons
+  <|> parseProc
+  <|> parseApply
   <|> parseUnpack
   <|> parseList
   <|> parseListUnOp
@@ -51,6 +52,16 @@ parseUnpack = Unpack
   <$> (tok "unpack" *> many1 (parseIdentifier reserved <* many space))
   <*> (symbol '=' *> parseExpr)
   <*> (tok "in" *> parseExpr)
+
+parseProc :: Parser Expr
+parseProc = Proc
+  <$> (tok "proc" *> betweenParens (parseIdentifier reserved))
+  <*> parseExpr
+
+parseApply :: Parser Expr
+parseApply = Apply
+  <$> (symbol '(' *> parseExpr)
+  <*> (parseExpr <* symbol ')')
 
 parseList :: Parser Expr
 parseList = try parseEmptyList <|> parseNonEmptyList
@@ -153,21 +164,22 @@ parseIdentifier reservedNames = do
 
 reserved :: S.Set String
 reserved = S.fromList [
-  "if",
-  "then",
-  "else",
-  "let",
-  "in",
-  "emptylist",
-  "minus",
-  "zero",
-  "equal",
-  "greater",
-  "less",
-  "list",
-  "cons",
   "car",
   "cdr",
+  "cons",
+  "else",
+  "emptylist",
+  "equal",
+  "greater",
+  "if",
+  "in",
+  "less",
+  "let",
+  "list",
+  "minus",
   "null",
-  "unpack"
+  "proc",
+  "then",
+  "unpack",
+  "zero"
   ]

@@ -3,7 +3,6 @@ module Eval (evaluate, run) where
 
 import Parser
 import Expr
-import Val
 
 import Text.Parsec
 import Control.Monad.State
@@ -11,8 +10,6 @@ import Control.Monad.Except (MonadError, throwError)
 import qualified Data.Map as M
 
 -- Evaluation
-type Env = M.Map String Val
-
 evaluate :: Expr -> Either String Val
 evaluate expr = evalStateT (eval expr) M.empty
 
@@ -60,6 +57,20 @@ eval (Unpack _ Nil _) =
 
 eval (Unpack _ badExpr _) =
   throwError $ "TypeError: not a list: " ++ show badExpr
+
+eval (Proc var body) = gets (VProc var body)
+
+eval (Apply e1 e2) = do
+  e1' <- eval e1
+  case e1' of
+    (VProc var body env) -> do
+      e2' <- eval e2
+      oldState <- get
+      put (extendEnv var e2' env)
+      bodyVal <- eval body
+      put oldState
+      pure bodyVal
+    x -> throwError $ "TypeError: not a procedure: " ++ show x
 
 -- eval utils
 evalAttribsWith :: (MonadError String m, MonadState Env m)
